@@ -41,6 +41,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import android.widget.FrameLayout;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener, MangaGridAdapter.OnMangaClickListener {
 
@@ -56,6 +57,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private SwipeRefreshLayout swipeRefreshLayout;
     private MangaGridAdapter mangaAdapter;
     private MangaViewModel viewModel;
+    private FrameLayout contentFrame;
     
     private final ActivityResultLauncher<Intent> folderPickerLauncher = 
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
@@ -82,6 +84,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             emptyView = findViewById(R.id.empty_view);
             mangaRecyclerView = findViewById(R.id.manga_recycler_view);
             swipeRefreshLayout = findViewById(R.id.swipe_refresh_layout);
+            contentFrame = findViewById(R.id.content_frame);
             
             // 设置下拉刷新
             setupSwipeRefresh();
@@ -320,32 +323,17 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
         
         if (id == R.id.nav_library) {
-            viewModel.getAllManga().removeObservers(this);
-            viewModel.getAllManga().observe(this, mangaList -> {
-                if (mangaList != null) {
-                    mangaAdapter.setMangaList(mangaList);
-                    showEmptyView(mangaList.isEmpty());
-                }
-            });
+            loadLibraryFragment();
             setTitle(R.string.all_manga);
         } else if (id == R.id.nav_history) {
-            viewModel.getAllManga().removeObservers(this);
-            viewModel.getRecentManga().observe(this, mangaList -> {
-                if (mangaList != null) {
-                    mangaAdapter.setMangaList(mangaList);
-                    showEmptyView(mangaList.isEmpty());
-                }
-            });
+            loadHistoryFragment();
             setTitle(R.string.history);
         } else if (id == R.id.nav_favorites) {
-            viewModel.getAllManga().removeObservers(this);
-            viewModel.getFavoriteManga().observe(this, mangaList -> {
-                if (mangaList != null) {
-                    mangaAdapter.setMangaList(mangaList);
-                    showEmptyView(mangaList.isEmpty());
-                }
-            });
+            loadFavoritesFragment();
             setTitle(R.string.favorites);
+        } else if (id == R.id.nav_tutorial) {
+            loadTutorialFragment();
+            setTitle(R.string.tutorial);
         } else if (id == R.id.nav_settings) {
             try {
                 Log.d(TAG, "正在启动设置页面");
@@ -360,6 +348,72 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
+    }
+    
+    // 加载库页面（所有漫画）
+    public void loadLibraryFragment() {
+        showMangaRecyclerView();
+        
+        viewModel.getAllManga().removeObservers(this);
+        viewModel.getAllManga().observe(this, mangaList -> {
+            if (mangaList != null) {
+                mangaAdapter.setMangaList(mangaList);
+                showEmptyView(mangaList.isEmpty());
+            }
+        });
+    }
+    
+    // 加载历史页面
+    private void loadHistoryFragment() {
+        showMangaRecyclerView();
+        
+        viewModel.getAllManga().removeObservers(this);
+        viewModel.getRecentManga().observe(this, mangaList -> {
+            if (mangaList != null) {
+                mangaAdapter.setMangaList(mangaList);
+                showEmptyView(mangaList.isEmpty());
+            }
+        });
+    }
+    
+    // 加载收藏页面
+    private void loadFavoritesFragment() {
+        showMangaRecyclerView();
+        
+        viewModel.getAllManga().removeObservers(this);
+        viewModel.getFavoriteManga().observe(this, mangaList -> {
+            if (mangaList != null) {
+                mangaAdapter.setMangaList(mangaList);
+                showEmptyView(mangaList.isEmpty());
+            }
+        });
+    }
+    
+    // 加载教程页面
+    private void loadTutorialFragment() {
+        // 隐藏RecyclerView相关组件
+        mangaRecyclerView.setVisibility(View.GONE);
+        swipeRefreshLayout.setVisibility(View.GONE);
+        emptyView.setVisibility(View.GONE);
+        progressBar.setVisibility(View.GONE);
+        
+        // 显示内容框架
+        contentFrame.setVisibility(View.VISIBLE);
+        
+        // 加载教程Fragment
+        getSupportFragmentManager().beginTransaction()
+                .replace(R.id.content_frame, TutorialFragment.newInstance())
+                .commit();
+    }
+    
+    // 显示漫画网格视图
+    private void showMangaRecyclerView() {
+        // 显示RecyclerView相关组件
+        swipeRefreshLayout.setVisibility(View.VISIBLE);
+        mangaRecyclerView.setVisibility(View.VISIBLE);
+        
+        // 隐藏内容框架
+        contentFrame.setVisibility(View.GONE);
     }
     
     @Override

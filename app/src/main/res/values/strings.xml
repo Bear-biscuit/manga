@@ -38,4 +38,25 @@
     <string name="reading_settings">阅读设置</string>
     <string name="auto_hide_controls">自动隐藏控制栏</string>
     <string name="volume_key_navigation">使用音量键翻页</string>
+    <string name="tutorial">使用教程</string>
+    <string name="tutorial_title">如何使用漫画阅读器</string>
+    <string name="manga_folder_location">漫画文件夹位置</string>
+    <string name="manga_folder_structure">漫画文件夹结构</string>
+    <string name="manga_folder_path">您的漫画应该存放在：\n%s</string>
+    <string name="manga_structure_info">漫画目录结构应该如下：\n
+        • 漫画目录（例如：/storage/emulated/0/manga/）\n
+        • ┣━ 漫画1文件夹/\n
+        • ┃   ┣━ 第1章/\n
+        • ┃   ┃   ┣━ 001.jpg\n
+        • ┃   ┃   ┣━ 002.jpg\n
+        • ┃   ┃   ┗━ ...\n
+        • ┃   ┣━ 第2章/\n
+        • ┃   ┗━ ...\n
+        • ┣━ 漫画2文件夹/\n
+        • ┗━ ...\n\n
+        注意：\n
+        • 每个漫画应该有自己的文件夹\n
+        • 每个章节应该有自己的子文件夹\n
+        • 支持的图片格式：jpg, jpeg, png, webp</string>
+    <string name="got_it">明白了</string>
 </resources>
