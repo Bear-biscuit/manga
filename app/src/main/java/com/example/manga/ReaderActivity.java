@@ -63,6 +63,7 @@ public class ReaderActivity extends AppCompatActivity {
     private float startY;
     private static final float SWIPE_THRESHOLD = 100;
     private boolean processingTouch = false;
+    private boolean isAnimating = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -227,6 +228,11 @@ public class ReaderActivity extends AppCompatActivity {
     private void setupTouchEvents() {
         // 这是一个关键的修改，分离触摸事件和点击事件
         imageView.setOnTouchListener((v, event) -> {
+            // 如果正在进行动画，忽略所有触摸事件
+            if (isAnimating) {
+                return true;
+            }
+            
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     startX = event.getX();
@@ -396,10 +402,20 @@ public class ReaderActivity extends AppCompatActivity {
     
     // 加载指定页面
     private void loadPage(int pageIndex) {
-        if (pageIndex < 0 || pageIndex >= totalPages) {
+        if (pageIndex < 0 || pageIndex >= totalPages || isAnimating) {
             return;
         }
         
+        // 如果是滑动翻页，添加动画效果
+        if (pageIndex != currentPage) {
+            animatePageChange(pageIndex);
+        } else {
+            updatePage(pageIndex);
+        }
+    }
+    
+    // 更新页面，不带动画
+    private void updatePage(int pageIndex) {
         currentPage = pageIndex;
         
         try {
@@ -421,9 +437,141 @@ public class ReaderActivity extends AppCompatActivity {
             // 更新阅读进度
             viewModel.updateReadProgress(chapter.getPath(), pageIndex);
             
+            // 预加载相邻页面
+            preloadAdjacentPages(pageIndex);
+            
         } catch (Exception e) {
             Log.e(TAG, "Error loading image: " + e.getMessage(), e);
             Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+    
+    /**
+     * 预加载相邻页面的图片
+     */
+    private void preloadAdjacentPages(int currentPageIndex) {
+        // 在后台线程中执行预加载，避免阻塞UI
+        new Thread(() -> {
+            try {
+                // 预加载下一页
+                if (currentPageIndex + 1 < totalPages) {
+                    String nextPagePath = imageFilePaths.get(currentPageIndex + 1);
+                    BitmapFactory.decodeFile(nextPagePath);
+                    Log.d(TAG, "预加载下一页: " + nextPagePath);
+                }
+                
+                // 预加载上一页
+                if (currentPageIndex - 1 >= 0) {
+                    String prevPagePath = imageFilePaths.get(currentPageIndex - 1);
+                    BitmapFactory.decodeFile(prevPagePath);
+                    Log.d(TAG, "预加载上一页: " + prevPagePath);
+                }
+            } catch (Exception e) {
+                Log.e(TAG, "预加载图片出错: " + e.getMessage(), e);
+            }
+        }).start();
+    }
+    
+    // 添加页面切换动画
+    private void animatePageChange(int newPageIndex) {
+        if (isAnimating) {
+            return;
+        }
+        
+        isAnimating = true;
+        
+        // 确定动画方向：左滑还是右滑
+        final boolean isNextPage = newPageIndex > currentPage;
+        
+        // 准备新的图片
+        try {
+            File imageFile = new File(imageFilePaths.get(newPageIndex));
+            if (!imageFile.exists()) {
+                Toast.makeText(this, "无法加载图片：文件不存在", Toast.LENGTH_SHORT).show();
+                isAnimating = false;
+                return;
+            }
+            
+            final Bitmap newBitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
+            final PhotoView nextImageView = new PhotoView(this);
+            nextImageView.setImageBitmap(newBitmap);
+            
+            // 将nextImageView添加到布局中并设置在当前图片之上
+            View container = findViewById(R.id.readerContainer);
+            if (container instanceof androidx.constraintlayout.widget.ConstraintLayout) {
+                androidx.constraintlayout.widget.ConstraintLayout layout = 
+                        (androidx.constraintlayout.widget.ConstraintLayout) container;
+                
+                // 设置nextImageView布局参数
+                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams params = 
+                        new androidx.constraintlayout.widget.ConstraintLayout.LayoutParams(
+                                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.MATCH_PARENT,
+                                androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.MATCH_PARENT);
+                
+                params.topToTop = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                params.bottomToBottom = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                params.leftToLeft = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                params.rightToRight = androidx.constraintlayout.widget.ConstraintLayout.LayoutParams.PARENT_ID;
+                
+                // 设置初始位置（屏幕外）
+                nextImageView.setTranslationX(isNextPage ? container.getWidth() : -container.getWidth());
+                
+                // 添加到布局
+                layout.addView(nextImageView, params);
+                
+                // 当前图片滑出动画
+                imageView.animate()
+                        .translationX(isNextPage ? -container.getWidth() : container.getWidth())
+                        .setDuration(300)
+                        .setInterpolator(new AccelerateInterpolator())
+                        .start();
+                
+                // 新图片滑入动画
+                nextImageView.animate()
+                        .translationX(0)
+                        .setDuration(300)
+                        .setInterpolator(new DecelerateInterpolator())
+                        .setListener(new AnimatorListenerAdapter() {
+                            @Override
+                            public void onAnimationEnd(Animator animation) {
+                                // 动画结束后，更新当前页信息
+                                currentPage = newPageIndex;
+                                
+                                // 从布局中移除临时的nextImageView
+                                layout.removeView(nextImageView);
+                                
+                                // 更新原始imageView的内容和位置
+                                imageView.setTranslationX(0);
+                                imageView.setImageBitmap(newBitmap);
+                                
+                                // 更新页面信息
+                                tvPageInfo.setText(getString(R.string.page_number, currentPage + 1, totalPages));
+                                
+                                // 更新 SeekBar 位置
+                                seekBar.setProgress(currentPage);
+                                
+                                // 更新阅读进度
+                                viewModel.updateReadProgress(chapter.getPath(), newPageIndex);
+                                
+                                // 预加载相邻页面
+                                preloadAdjacentPages(newPageIndex);
+                                
+                                // 动画完成
+                                isAnimating = false;
+                            }
+                        })
+                        .start();
+            } else {
+                // 如果容器不是ConstraintLayout，直接更新页面不使用动画
+                isAnimating = false;
+                updatePage(newPageIndex);
+            }
+            
+        } catch (Exception e) {
+            Log.e(TAG, "Error during page animation: " + e.getMessage(), e);
+            Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            isAnimating = false;
+            updatePage(newPageIndex);
         }
     }
 
