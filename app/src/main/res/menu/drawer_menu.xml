@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <group android:checkableBehavior="single">
+        <item
+            android:id="@+id/nav_library"
+            android:icon="@android:drawable/ic_menu_gallery"
+            android:title="@string/all_manga" />
+        <item
+            android:id="@+id/nav_history"
+            android:icon="@android:drawable/ic_menu_recent_history"
+            android:title="@string/history" />
+        <item
+            android:id="@+id/nav_favorites"
+            android:icon="@android:drawable/btn_star"
+            android:title="@string/favorites" />
+    </group>
+    <item android:title="@string/settings">
+        <menu>
+            <item
+                android:id="@+id/nav_select_folder"
+                android:icon="@android:drawable/ic_menu_manage"
+                android:title="@string/select_manga_folder" />
+        </menu>
+    </item>
+</menu> 

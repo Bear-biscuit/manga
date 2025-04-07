@@ -1,0 +1,36 @@
+<resources>
+    <string name="app_name">漫画阅读器</string>
+    <string name="manga_list_title">漫画书架</string>
+    <string name="add_to_favorites">收藏</string>
+    <string name="remove_from_favorites">取消收藏</string>
+    <string name="read_now">开始阅读</string>
+    <string name="previous">上一页</string>
+    <string name="next">下一页</string>
+    <string name="page_number">第 %1$d 页，共 %2$d 页</string>
+    <string name="description">简介</string>
+    <string name="reading">正在阅读：%s</string>
+    <string name="no_manga_found">未找到漫画</string>
+    <string name="permission_required">需要存储权限</string>
+    <string name="permission_denied">权限被拒绝，无法访问漫画</string>
+    <string name="error_loading_manga">加载漫画失败</string>
+    <string name="chapter">章节</string>
+    <string name="loading">加载中…</string>
+    <string name="continue_reading">继续阅读</string>
+    <string name="start_reading">开始阅读</string>
+    <string name="history">历史记录</string>
+    <string name="all_manga">全部漫画</string>
+    <string name="favorites">收藏夹</string>
+    <string name="settings">设置</string>
+    <string name="added_to_favorites">已添加到收藏</string>
+    <string name="removed_from_favorites">已从收藏中移除</string>
+    <string name="select_manga_folder">选择漫画文件夹</string>
+    <string name="select_folder">选择文件夹</string>
+    <string name="theme_settings">主题设置</string>
+    <string name="select_theme">选择主题颜色</string>
+    <string name="default_theme">默认主题</string>
+    <string name="dark_theme">深色主题</string>
+    <string name="light_theme">浅色主题</string>
+    <string name="reading_settings">阅读设置</string>
+    <string name="auto_hide_controls">自动隐藏控制栏</string>
+    <string name="volume_key_navigation">使用音量键翻页</string>
+</resources>
