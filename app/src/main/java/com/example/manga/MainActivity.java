@@ -193,8 +193,29 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     private void applyTheme() {
         // 从SharedPreferences读取主题设置
         SharedPreferences prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE);
+        
+        // 应用夜间模式
         int theme = prefs.getInt(SettingsActivity.KEY_THEME, androidx.appcompat.app.AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         androidx.appcompat.app.AppCompatDelegate.setDefaultNightMode(theme);
+        
+        // 应用颜色主题
+        int colorTheme = prefs.getInt(SettingsActivity.KEY_COLOR_THEME, SettingsActivity.COLOR_THEME_BLUE);
+        
+        switch (colorTheme) {
+            case SettingsActivity.COLOR_THEME_RED:
+                setTheme(R.style.Theme_Manga_Red);
+                break;
+            case SettingsActivity.COLOR_THEME_GREEN:
+                setTheme(R.style.Theme_Manga_Green);
+                break;
+            case SettingsActivity.COLOR_THEME_DARK:
+                setTheme(R.style.Theme_Manga_Dark);
+                break;
+            case SettingsActivity.COLOR_THEME_BLUE:
+            default:
+                setTheme(R.style.Theme_Manga_Blue);
+                break;
+        }
     }
     
     @Override
@@ -355,8 +376,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             });
             setTitle(R.string.favorites);
         } else if (id == R.id.nav_settings) {
-            Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
+            try {
+                Log.d(TAG, "正在启动设置页面");
+                Intent intent = new Intent(this, SettingsActivity.class);
+                startActivityForResult(intent, 100);
+                Log.d(TAG, "设置页面启动命令已发送");
+            } catch (Exception e) {
+                Log.e(TAG, "启动设置页面时出错: " + e.getMessage(), e);
+                Toast.makeText(this, "打开设置页面失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            }
         } else if (id == R.id.nav_select_folder) {
             selectMangaFolder();
         }
@@ -414,5 +442,16 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             Toast.makeText(MainActivity.this, "正在刷新漫画目录...", Toast.LENGTH_SHORT).show();
             scanMangaDirectory();
         });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 100) {
+            // 设置页面返回后，重新应用主题
+            applyTheme();
+            // 重新创建活动以应用新主题
+            recreate();
+        }
     }
 } 

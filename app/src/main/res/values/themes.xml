@@ -2,8 +2,8 @@
     <!-- Base application theme. -->
     <style name="Theme.Manga" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
-        <item name="colorPrimary">@color/purple_500</item>
-        <item name="colorPrimaryVariant">@color/purple_700</item>
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorPrimaryVariant">@color/blue_700</item>
         <item name="colorOnPrimary">@color/white</item>
         <!-- Secondary brand color. -->
         <item name="colorSecondary">@color/teal_200</item>
@@ -12,5 +12,33 @@
         <!-- Status bar color. -->
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
+    </style>
+    
+    <!-- 蓝色主题 -->
+    <style name="Theme.Manga.Blue">
+        <item name="colorPrimary">@color/blue_500</item>
+        <item name="colorPrimaryVariant">@color/blue_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+    </style>
+    
+    <!-- 红色主题 -->
+    <style name="Theme.Manga.Red">
+        <item name="colorPrimary">@color/red_500</item>
+        <item name="colorPrimaryVariant">@color/red_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+    </style>
+    
+    <!-- 绿色主题 -->
+    <style name="Theme.Manga.Green">
+        <item name="colorPrimary">@color/green_500</item>
+        <item name="colorPrimaryVariant">@color/green_700</item>
+        <item name="colorOnPrimary">@color/white</item>
+    </style>
+    
+    <!-- 深色主题 -->
+    <style name="Theme.Manga.Dark">
+        <item name="colorPrimary">@color/dark_500</item>
+        <item name="colorPrimaryVariant">@color/dark_700</item>
+        <item name="colorOnPrimary">@color/white</item>
     </style>
 </resources>

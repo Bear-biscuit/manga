@@ -32,7 +32,8 @@ import java.util.List;
 public class ReaderActivity extends AppCompatActivity {
 
     private static final String TAG = "ReaderActivity";
-    private View controlsLayout;
+    private View topControlsLayout;
+    private View bottomControlsLayout;
     private PhotoView imageView;
     private SeekBar seekBar;
     private TextView tvPageInfo;
@@ -48,6 +49,11 @@ public class ReaderActivity extends AppCompatActivity {
     private Chapter chapter;
     private List<String> imageFilePaths = new ArrayList<>();
     private MangaViewModel viewModel;
+    
+    // 添加滑动手势检测相关变量
+    private float startX;
+    private static final float SWIPE_THRESHOLD = 100;
+    private static final float SWIPE_VELOCITY_THRESHOLD = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,13 +94,14 @@ public class ReaderActivity extends AppCompatActivity {
         applyTheme();
         
         // 确保控制栏状态正确
-        if (controlsLayout != null) {
+        if (topControlsLayout != null && bottomControlsLayout != null) {
             // 读取自动隐藏设置
             SharedPreferences prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE);
             boolean autoHide = prefs.getBoolean(SettingsActivity.KEY_AUTO_HIDE, true);
             
             // 如果控制栏当前可见且启用了自动隐藏，设置定时器隐藏它
-            if (controlsLayout.getVisibility() == View.VISIBLE && autoHide) {
+            if ((topControlsLayout.getVisibility() == View.VISIBLE || 
+                 bottomControlsLayout.getVisibility() == View.VISIBLE) && autoHide) {
                 imageView.removeCallbacks(this::hideControls);
                 imageView.postDelayed(this::hideControls, 3000);
             }
@@ -104,12 +111,34 @@ public class ReaderActivity extends AppCompatActivity {
     private void applyTheme() {
         // 从SharedPreferences读取主题设置
         SharedPreferences prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE);
+        
+        // 应用夜间模式
         int theme = prefs.getInt(SettingsActivity.KEY_THEME, AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM);
         AppCompatDelegate.setDefaultNightMode(theme);
+        
+        // 应用颜色主题
+        int colorTheme = prefs.getInt(SettingsActivity.KEY_COLOR_THEME, SettingsActivity.COLOR_THEME_BLUE);
+        
+        switch (colorTheme) {
+            case SettingsActivity.COLOR_THEME_RED:
+                setTheme(R.style.Theme_Manga_Red);
+                break;
+            case SettingsActivity.COLOR_THEME_GREEN:
+                setTheme(R.style.Theme_Manga_Green);
+                break;
+            case SettingsActivity.COLOR_THEME_DARK:
+                setTheme(R.style.Theme_Manga_Dark);
+                break;
+            case SettingsActivity.COLOR_THEME_BLUE:
+            default:
+                setTheme(R.style.Theme_Manga_Blue);
+                break;
+        }
     }
 
     private void setupControls() {
-        controlsLayout = findViewById(R.id.controlsLayout);
+        topControlsLayout = findViewById(R.id.topControlsLayout);
+        bottomControlsLayout = findViewById(R.id.bottomControlsLayout);
         imageView = findViewById(R.id.imageView);
         seekBar = findViewById(R.id.seekBar);
         tvPageInfo = findViewById(R.id.tvPageInfo);
@@ -125,13 +154,21 @@ public class ReaderActivity extends AppCompatActivity {
         // 设置点击事件
         imageView.setOnClickListener(v -> toggleControls());
         
+        // 添加滑动手势检测
+        setupSwipeGestures();
+        
         // 设置返回按钮
         btnBack.setOnClickListener(v -> finish());
         
         // 设置设置按钮
         btnSettings.setOnClickListener(v -> {
             Intent intent = new Intent(this, SettingsActivity.class);
-            startActivity(intent);
+            // 记录当前状态，以便在返回时恢复
+            intent.putExtra("manga", manga);
+            intent.putExtra("chapter", chapter);
+            intent.putExtra("currentPage", currentPage);
+            // 使用 startActivityForResult 而不是 startActivity
+            startActivityForResult(intent, 1);
         });
         
         // 设置上一页按钮
@@ -227,7 +264,8 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void toggleControls() {
-        if (controlsLayout.getVisibility() == View.VISIBLE) {
+        if (topControlsLayout.getVisibility() == View.VISIBLE &&
+            bottomControlsLayout.getVisibility() == View.VISIBLE) {
             hideControls();
         } else {
             showControls();
@@ -235,7 +273,9 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void showControls() {
-        controlsLayout.setVisibility(View.VISIBLE);
+        topControlsLayout.setVisibility(View.VISIBLE);
+        bottomControlsLayout.setVisibility(View.VISIBLE);
+        
         // 如果启用了自动隐藏，3秒后自动隐藏
         SharedPreferences prefs = getSharedPreferences(SettingsActivity.PREFS_NAME, MODE_PRIVATE);
         boolean autoHide = prefs.getBoolean(SettingsActivity.KEY_AUTO_HIDE, true);
@@ -246,7 +286,8 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void hideControls() {
-        controlsLayout.setVisibility(View.GONE);
+        topControlsLayout.setVisibility(View.GONE);
+        bottomControlsLayout.setVisibility(View.GONE);
     }
 
     @Override
@@ -300,6 +341,50 @@ public class ReaderActivity extends AppCompatActivity {
         } catch (Exception e) {
             Log.e(TAG, "Error loading image: " + e.getMessage(), e);
             Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // 添加滑动手势检测方法
+    private void setupSwipeGestures() {
+        imageView.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case android.view.MotionEvent.ACTION_DOWN:
+                    startX = event.getX();
+                    return false;  // 返回 false 以允许 PhotoView 处理其他手势
+                
+                case android.view.MotionEvent.ACTION_UP:
+                    float endX = event.getX();
+                    float diffX = startX - endX;
+                    
+                    // 如果水平移动距离足够大，则视为翻页
+                    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
+                        if (diffX > 0) {
+                            // 向左滑动，显示下一页
+                            if (currentPage < totalPages - 1) {
+                                loadPage(currentPage + 1);
+                                return true;
+                            }
+                        } else {
+                            // 向右滑动，显示上一页
+                            if (currentPage > 0) {
+                                loadPage(currentPage - 1);
+                                return true;
+                            }
+                        }
+                    }
+                    return false;
+            }
+            return false;
+        });
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == 1) {
+            // 设置页面返回后，重新应用主题和布局
+            applyTheme();
+            recreate();
         }
     }
 } 

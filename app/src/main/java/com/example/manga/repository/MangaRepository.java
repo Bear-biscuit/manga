@@ -93,52 +93,133 @@ public class MangaRepository {
     // 文件系统操作
     public void scanMangaDirectory(String directoryPath, final Callback<List<Manga>> callback) {
         executorService.execute(() -> {
-            android.util.Log.d("MangaRepository", "开始扫描漫画目录: " + directoryPath);
-            
-            // 扫描文件系统获取漫画列表
-            List<Manga> mangaList = MangaFileUtils.scanMangaDirectory(directoryPath);
-            android.util.Log.d("MangaRepository", "扫描到 " + mangaList.size() + " 本漫画");
-            
-            // 保存扫描到的漫画到数据库
-            for (Manga manga : mangaList) {
-                // 检查数据库中是否已存在该漫画
-                Manga existingManga = mangaDao.getMangaByPath(manga.getPath());
+            try {
+                android.util.Log.d("MangaRepository", "开始扫描漫画目录: " + directoryPath);
                 
-                if (existingManga != null) {
-                    // 更新现有漫画的信息，但保留用户设置如收藏状态和阅读历史
-                    manga.setFavorite(existingManga.isFavorite());
-                    manga.setLastReadTime(existingManga.getLastReadTime());
-                    manga.setTotalChapters(existingManga.getTotalChapters());
-                    mangaDao.update(manga);
-                    android.util.Log.d("MangaRepository", "更新现有漫画: " + manga.getTitle());
-                } else {
-                    // 插入新漫画
-                    mangaDao.insert(manga);
-                    android.util.Log.d("MangaRepository", "添加新漫画: " + manga.getTitle());
+                if (directoryPath == null || directoryPath.isEmpty()) {
+                    android.util.Log.e("MangaRepository", "无效的目录路径: null或空");
+                    if (callback != null) {
+                        callback.onComplete(new java.util.ArrayList<>());
+                    }
+                    return;
                 }
                 
-                // 扫描并保存章节信息
-                List<Chapter> chapters = MangaFileUtils.getChapters(manga.getPath());
-                for (Chapter chapter : chapters) {
-                    // 检查数据库中是否已存在该章节
-                    Chapter existingChapter = chapterDao.getChapterByPath(chapter.getPath());
-                    
-                    if (existingChapter != null) {
-                        // 更新现有章节的信息，但保留阅读进度
-                        chapter.setLastReadPage(existingChapter.getLastReadPage());
-                        chapter.setLastReadTime(existingChapter.getLastReadTime());
-                        chapterDao.update(chapter);
-                    } else {
-                        // 插入新章节
-                        chapterDao.insert(chapter);
+                // 扫描文件系统获取漫画列表
+                List<Manga> mangaList = MangaFileUtils.scanMangaDirectory(directoryPath);
+                
+                if (mangaList == null) {
+                    android.util.Log.e("MangaRepository", "扫描返回null结果，创建空列表");
+                    mangaList = new java.util.ArrayList<>();
+                    if (callback != null) {
+                        callback.onComplete(mangaList);
+                    }
+                    return;
+                }
+                
+                android.util.Log.d("MangaRepository", "扫描到 " + mangaList.size() + " 本漫画");
+                
+                // 保存扫描到的漫画到数据库
+                for (Manga manga : mangaList) {
+                    try {
+                        if (manga == null || manga.getPath() == null) {
+                            android.util.Log.e("MangaRepository", "忽略无效的漫画对象");
+                            continue;
+                        }
+                        
+                        // 检查数据库中是否已存在该漫画
+                        Manga existingManga = null;
+                        try {
+                            existingManga = mangaDao.getMangaByPath(manga.getPath());
+                        } catch (Exception e) {
+                            android.util.Log.e("MangaRepository", "获取现有漫画时出错: " + e.getMessage(), e);
+                        }
+                        
+                        if (existingManga != null) {
+                            // 更新现有漫画的信息，但保留用户设置如收藏状态和阅读历史
+                            manga.setFavorite(existingManga.isFavorite());
+                            manga.setLastReadTime(existingManga.getLastReadTime());
+                            manga.setTotalChapters(existingManga.getTotalChapters());
+                            try {
+                                mangaDao.update(manga);
+                                android.util.Log.d("MangaRepository", "更新现有漫画: " + manga.getTitle());
+                            } catch (Exception e) {
+                                android.util.Log.e("MangaRepository", "更新漫画时出错: " + e.getMessage(), e);
+                            }
+                        } else {
+                            // 插入新漫画
+                            try {
+                                mangaDao.insert(manga);
+                                android.util.Log.d("MangaRepository", "添加新漫画: " + manga.getTitle());
+                            } catch (Exception e) {
+                                android.util.Log.e("MangaRepository", "插入漫画时出错: " + e.getMessage(), e);
+                            }
+                        }
+                        
+                        // 扫描并保存章节信息
+                        List<Chapter> chapters = null;
+                        try {
+                            chapters = MangaFileUtils.getChapters(manga.getPath());
+                        } catch (Exception e) {
+                            android.util.Log.e("MangaRepository", "获取章节时出错: " + e.getMessage(), e);
+                            chapters = new java.util.ArrayList<>();
+                        }
+                        
+                        if (chapters == null) {
+                            android.util.Log.e("MangaRepository", "章节列表为null，创建空列表");
+                            chapters = new java.util.ArrayList<>();
+                        }
+                        
+                        for (Chapter chapter : chapters) {
+                            try {
+                                if (chapter == null || chapter.getPath() == null) {
+                                    android.util.Log.e("MangaRepository", "忽略无效的章节对象");
+                                    continue;
+                                }
+                                
+                                // 检查数据库中是否已存在该章节
+                                Chapter existingChapter = null;
+                                try {
+                                    existingChapter = chapterDao.getChapterByPath(chapter.getPath());
+                                } catch (Exception e) {
+                                    android.util.Log.e("MangaRepository", "获取现有章节时出错: " + e.getMessage(), e);
+                                }
+                                
+                                if (existingChapter != null) {
+                                    // 更新现有章节的信息，但保留阅读进度
+                                    chapter.setLastReadPage(existingChapter.getLastReadPage());
+                                    chapter.setLastReadTime(existingChapter.getLastReadTime());
+                                    try {
+                                        chapterDao.update(chapter);
+                                    } catch (Exception e) {
+                                        android.util.Log.e("MangaRepository", "更新章节时出错: " + e.getMessage(), e);
+                                    }
+                                } else {
+                                    // 插入新章节
+                                    try {
+                                        chapterDao.insert(chapter);
+                                    } catch (Exception e) {
+                                        android.util.Log.e("MangaRepository", "插入章节时出错: " + e.getMessage(), e);
+                                    }
+                                }
+                            } catch (Exception e) {
+                                android.util.Log.e("MangaRepository", "处理章节时出错: " + e.getMessage(), e);
+                            }
+                        }
+                    } catch (Exception e) {
+                        android.util.Log.e("MangaRepository", "处理漫画时出错: " + e.getMessage(), e);
                     }
                 }
-            }
-            
-            android.util.Log.d("MangaRepository", "漫画目录扫描完成");
-            
-            if (callback != null) {
-                callback.onComplete(mangaList);
+                
+                android.util.Log.d("MangaRepository", "漫画目录扫描完成");
+                
+                if (callback != null) {
+                    callback.onComplete(mangaList);
+                }
+            } catch (Exception e) {
+                android.util.Log.e("MangaRepository", "扫描漫画目录时发生异常: " + e.getMessage(), e);
+                if (callback != null) {
+                    callback.onComplete(new java.util.ArrayList<>());
+                }
             }
         });
     }

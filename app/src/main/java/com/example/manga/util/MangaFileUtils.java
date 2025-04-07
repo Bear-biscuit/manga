@@ -139,51 +139,71 @@ public class MangaFileUtils {
         
         Log.d(TAG, "Getting chapters for manga: " + mangaPath);
         
-        File mangaFolder = new File(mangaPath);
-        if (!mangaFolder.exists() || !mangaFolder.isDirectory()) {
-            Log.e(TAG, "Invalid manga path: " + mangaPath);
-            return chapters;
-        }
-        
-        File[] chapterFolders = mangaFolder.listFiles(File::isDirectory);
-        if (chapterFolders == null || chapterFolders.length == 0) {
-            Log.e(TAG, "No chapter folders found in: " + mangaPath);
-            return chapters;
-        }
-        
-        Log.d(TAG, "Found " + chapterFolders.length + " potential chapter folders");
-        
-        // 按章节排序
-        Arrays.sort(chapterFolders, new ChapterComparator());
-        
-        for (int i = 0; i < chapterFolders.length; i++) {
-            File chapterFolder = chapterFolders[i];
-            String chapterTitle = chapterFolder.getName();
-            int chapterNumber = extractChapterNumber(chapterTitle, i + 1);
-            
-            Log.d(TAG, "Processing chapter: " + chapterTitle + " with number: " + chapterNumber);
-            
-            // 只有包含图片的文件夹才会被添加为章节
-            int pageCount = countPages(chapterFolder.getAbsolutePath());
-            if (pageCount > 0) {
-                Chapter chapter = new Chapter(
-                        chapterFolder.getAbsolutePath(),
-                        mangaPath,
-                        chapterTitle,
-                        chapterNumber
-                );
-                
-                // 设置总页数
-                chapter.setTotalPages(pageCount);
-                
-                chapters.add(chapter);
-                Log.d(TAG, "Added chapter with " + pageCount + " pages");
-            } else {
-                Log.d(TAG, "Skipping folder with no images: " + chapterTitle);
+        try {
+            if (mangaPath == null || mangaPath.isEmpty()) {
+                Log.e(TAG, "Invalid manga path: null or empty");
+                return chapters;
             }
+            
+            File mangaFolder = new File(mangaPath);
+            if (!mangaFolder.exists() || !mangaFolder.isDirectory()) {
+                Log.e(TAG, "Invalid manga path: " + mangaPath);
+                return chapters;
+            }
+            
+            File[] chapterFolders = mangaFolder.listFiles(File::isDirectory);
+            if (chapterFolders == null || chapterFolders.length == 0) {
+                Log.e(TAG, "No chapter folders found in: " + mangaPath);
+                return chapters;
+            }
+            
+            Log.d(TAG, "Found " + chapterFolders.length + " potential chapter folders");
+            
+            // 按章节排序
+            Arrays.sort(chapterFolders, new ChapterComparator());
+            
+            for (int i = 0; i < chapterFolders.length; i++) {
+                try {
+                    File chapterFolder = chapterFolders[i];
+                    if (chapterFolder == null || !chapterFolder.exists()) {
+                        Log.e(TAG, "Invalid chapter folder at index " + i);
+                        continue;
+                    }
+                    
+                    String chapterTitle = chapterFolder.getName();
+                    int chapterNumber = extractChapterNumber(chapterTitle, i + 1);
+                    
+                    Log.d(TAG, "Processing chapter: " + chapterTitle + " with number: " + chapterNumber);
+                    
+                    // 只有包含图片的文件夹才会被添加为章节
+                    int pageCount = countPages(chapterFolder.getAbsolutePath());
+                    if (pageCount > 0) {
+                        Chapter chapter = new Chapter(
+                                chapterFolder.getAbsolutePath(),
+                                mangaPath,
+                                chapterTitle,
+                                chapterNumber
+                        );
+                        
+                        // 设置总页数
+                        chapter.setTotalPages(pageCount);
+                        
+                        chapters.add(chapter);
+                        Log.d(TAG, "Added chapter with " + pageCount + " pages");
+                    } else {
+                        Log.d(TAG, "Skipping folder with no images: " + chapterTitle);
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error processing chapter at index " + i + ": " + e.getMessage(), e);
+                    // 继续处理下一个章节，不让单个章节的错误影响整个过程
+                }
+            }
+            
+            Log.d(TAG, "Total chapters found: " + chapters.size());
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error getting chapters for manga: " + mangaPath, e);
         }
         
-        Log.d(TAG, "Total chapters found: " + chapters.size());
         return chapters;
     }
     
@@ -191,34 +211,53 @@ public class MangaFileUtils {
     public static List<String> getChapterPages(String chapterPath) {
         List<String> pages = new ArrayList<>();
         
-        File chapterFolder = new File(chapterPath);
-        if (!chapterFolder.exists() || !chapterFolder.isDirectory()) {
-            Log.e(TAG, "Invalid chapter path: " + chapterPath);
-            return pages;
-        }
-        
-        File[] imageFiles = chapterFolder.listFiles(file -> {
-            if (file.isFile()) {
-                String name = file.getName().toLowerCase();
-                for (String ext : SUPPORTED_IMAGE_EXTENSIONS) {
-                    if (name.endsWith(ext)) {
-                        return true;
+        try {
+            if (chapterPath == null || chapterPath.isEmpty()) {
+                Log.e(TAG, "Invalid chapter path: null or empty");
+                return pages;
+            }
+            
+            File chapterFolder = new File(chapterPath);
+            if (!chapterFolder.exists() || !chapterFolder.isDirectory()) {
+                Log.e(TAG, "Invalid chapter path: " + chapterPath);
+                return pages;
+            }
+            
+            File[] imageFiles = chapterFolder.listFiles(file -> {
+                if (file != null && file.isFile()) {
+                    String name = file.getName().toLowerCase();
+                    for (String ext : SUPPORTED_IMAGE_EXTENSIONS) {
+                        if (name.endsWith(ext)) {
+                            return true;
+                        }
                     }
                 }
+                return false;
+            });
+            
+            if (imageFiles == null || imageFiles.length == 0) {
+                Log.e(TAG, "No image files found in: " + chapterPath);
+                return pages;
             }
-            return false;
-        });
-        
-        if (imageFiles == null || imageFiles.length == 0) {
-            Log.e(TAG, "No image files found in: " + chapterPath);
-            return pages;
-        }
-        
-        // 按文件名排序
-        Arrays.sort(imageFiles, Comparator.comparing(File::getName));
-        
-        for (File imageFile : imageFiles) {
-            pages.add(imageFile.getAbsolutePath());
+            
+            // 按文件名排序
+            Arrays.sort(imageFiles, Comparator.comparing(File::getName));
+            
+            for (File imageFile : imageFiles) {
+                try {
+                    if (imageFile != null && imageFile.exists() && imageFile.isFile()) {
+                        pages.add(imageFile.getAbsolutePath());
+                    } else if (imageFile != null) {
+                        Log.e(TAG, "Skipping invalid image file: " + imageFile.getName());
+                    }
+                } catch (Exception e) {
+                    Log.e(TAG, "Error processing image file: " + e.getMessage(), e);
+                }
+            }
+            
+            Log.d(TAG, "Found " + pages.size() + " pages in chapter: " + chapterPath);
+        } catch (Exception e) {
+            Log.e(TAG, "Unexpected error getting chapter pages: " + chapterPath, e);
         }
         
         return pages;
