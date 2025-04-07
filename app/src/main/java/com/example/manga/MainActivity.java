@@ -38,6 +38,7 @@ import com.google.android.material.navigation.NavigationView;
 import com.example.manga.util.ToastUtil;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -269,23 +270,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         Log.d(TAG, "Scanning manga directory: " + currentFolder);
         
-        // 检查目录是否存在
+        // 检查目录是否存在，如果不存在则创建
         File directory = new File(currentFolder);
         if (!directory.exists()) {
-            Log.e(TAG, "Manga directory does not exist: " + currentFolder);
-            ToastUtil.showLong(this, "漫画目录不存在，请选择有效目录");
-            showEmptyView(true);
-            if (swipeRefreshLayout.isRefreshing()) {
-                swipeRefreshLayout.setRefreshing(false);
+            Log.d(TAG, "Manga directory does not exist, creating: " + currentFolder);
+            boolean created = directory.mkdirs();
+            if (created) {
+                Log.d(TAG, "Successfully created manga directory: " + currentFolder);
+                
+                // 创建.nomedia文件防止相册扫描
+                createNoMediaFile(directory);
+            } else {
+                Log.e(TAG, "Failed to create manga directory: " + currentFolder);
+                ToastUtil.showLong(this, "无法创建漫画目录，请手动创建或选择其他目录");
+                showEmptyView(true);
+                if (swipeRefreshLayout.isRefreshing()) {
+                    swipeRefreshLayout.setRefreshing(false);
+                }
+                return;
             }
-            
-            // 提示用户需要选择有效目录
-            new android.os.Handler().postDelayed(() -> {
-                // 提示用户选择新目录
-                ToastUtil.showLong(this, "请选择包含漫画的目录");
-                selectMangaFolder();
-            }, 1000);
-            return;
+        } else {
+            // 目录已存在，确保有.nomedia文件
+            createNoMediaFile(directory);
         }
         
         if (!directory.isDirectory()) {
@@ -329,6 +335,26 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
+            }
+        }
+    }
+    
+    /**
+     * 在指定目录创建.nomedia文件，以防止媒体扫描器扫描该目录中的图片
+     * @param directory 要创建.nomedia文件的目录
+     */
+    private void createNoMediaFile(File directory) {
+        File nomediaFile = new File(directory, ".nomedia");
+        if (!nomediaFile.exists()) {
+            try {
+                boolean created = nomediaFile.createNewFile();
+                if (created) {
+                    Log.d(TAG, "Successfully created .nomedia file in: " + directory.getAbsolutePath());
+                } else {
+                    Log.e(TAG, "Failed to create .nomedia file in: " + directory.getAbsolutePath());
+                }
+            } catch (IOException e) {
+                Log.e(TAG, "Error creating .nomedia file: " + e.getMessage(), e);
             }
         }
     }
