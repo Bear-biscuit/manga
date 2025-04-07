@@ -1,6 +1,7 @@
 package com.example.manga.viewmodel;
 
 import android.app.Application;
+import android.os.Environment;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -16,14 +17,13 @@ import java.util.List;
 
 public class MangaViewModel extends AndroidViewModel {
     private final MangaRepository repository;
-    private final MutableLiveData<String> currentMangaFolder;
     private final MutableLiveData<Boolean> isLoading;
     private final MutableLiveData<String> errorMessage;
+    private static final String DEFAULT_MANGA_FOLDER = Environment.getExternalStorageDirectory() + "/manga";
     
     public MangaViewModel(@NonNull Application application) {
         super(application);
         repository = new MangaRepository(application);
-        currentMangaFolder = new MutableLiveData<>();
         isLoading = new MutableLiveData<>(false);
         errorMessage = new MutableLiveData<>();
     }
@@ -79,36 +79,35 @@ public class MangaViewModel extends AndroidViewModel {
     // 扫描漫画目录
     public void scanMangaDirectory(String directoryPath) {
         if (directoryPath == null || directoryPath.isEmpty()) {
-            Log.e("MangaViewModel", "Invalid directory path: null or empty");
+            Log.e("MangaViewModel", "无效的目录路径: 为空");
             errorMessage.postValue("无效的目录路径");
             isLoading.postValue(false);
             return;
         }
         
         isLoading.setValue(true);
-        currentMangaFolder.setValue(directoryPath);
         
-        Log.d("MangaViewModel", "Starting to scan directory: " + directoryPath);
+        Log.d("MangaViewModel", "开始扫描目录: " + directoryPath);
         
         try {
             repository.scanMangaDirectory(directoryPath, mangaList -> {
                 isLoading.postValue(false);
                 
                 if (mangaList == null) {
-                    Log.e("MangaViewModel", "Scan returned null result for directory: " + directoryPath);
-                    errorMessage.postValue("扫描目录时出错，请尝试其他目录");
+                    Log.e("MangaViewModel", "扫描返回空结果，目录: " + directoryPath);
+                    errorMessage.postValue("扫描目录时出错");
                     return;
                 }
                 
                 if (mangaList.isEmpty()) {
-                    Log.e("MangaViewModel", "No manga found in directory: " + directoryPath);
-                    errorMessage.postValue("未找到漫画，请确保所选目录包含漫画文件夹");
+                    Log.e("MangaViewModel", "目录中未找到漫画: " + directoryPath);
+                    errorMessage.postValue("未找到漫画，请确保目录包含漫画文件夹");
                 } else {
-                    Log.d("MangaViewModel", "Found " + mangaList.size() + " manga in directory: " + directoryPath);
+                    Log.d("MangaViewModel", "在目录 " + directoryPath + " 中找到 " + mangaList.size() + " 本漫画");
                 }
             });
         } catch (Exception e) {
-            Log.e("MangaViewModel", "Error in scanMangaDirectory: " + e.getMessage(), e);
+            Log.e("MangaViewModel", "扫描漫画目录时出错: " + e.getMessage(), e);
             errorMessage.postValue("扫描目录时出错: " + e.getMessage());
             isLoading.postValue(false);
         }
@@ -124,9 +123,9 @@ public class MangaViewModel extends AndroidViewModel {
         repository.getLastReadChapter(mangaPath, callback);
     }
     
-    // 获取当前漫画文件夹
-    public LiveData<String> getCurrentMangaFolder() {
-        return currentMangaFolder;
+    // 获取默认漫画文件夹
+    public String getDefaultMangaFolder() {
+        return DEFAULT_MANGA_FOLDER;
     }
     
     // 获取加载状态

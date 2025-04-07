@@ -59,60 +59,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     
     private final ActivityResultLauncher<Intent> folderPickerLauncher = 
             registerForActivityResult(new ActivityResultContracts.StartActivityForResult(), result -> {
-                if (result.getResultCode() == RESULT_OK && result.getData() != null) {
-                    Uri uri = result.getData().getData();
-                    if (uri != null) {
-                        try {
-                            // 获取真实路径
-                            String path = uri.getPath();
-                            Log.d(TAG, "Original selected path URI: " + uri.toString());
-                            Log.d(TAG, "Original selected path: " + path);
-                            
-                            // 处理DocumentFile路径
-                            if (path.startsWith("/tree/")) {
-                                path = path.replace("/tree/", "");
-                            }
-                            
-                            // 处理一些特殊路径
-                            if (path.contains(":")) {
-                                String[] parts = path.split(":");
-                                if (parts.length > 1) {
-                                    if (parts[0].equals("primary")) {
-                                        // 主存储
-                                        path = Environment.getExternalStorageDirectory() + "/" + parts[1];
-                                    } else {
-                                        // SD卡或其他外部存储
-                                        path = "/storage/" + parts[0] + "/" + parts[1];
-                                    }
-                                }
-                            }
-                            
-                            Log.d(TAG, "Processed folder path: " + path);
-                            
-                            // 检查路径是否存在且可读
-                            File directory = new File(path);
-                            if (!directory.exists()) {
-                                ToastUtil.showLong(MainActivity.this, "目录不存在: " + path);
-                                return;
-                            }
-                            
-                            if (!directory.isDirectory()) {
-                                ToastUtil.showLong(MainActivity.this, "所选路径不是目录: " + path);
-                                return;
-                            }
-                            
-                            if (!directory.canRead()) {
-                                ToastUtil.showLong(MainActivity.this, "无法读取目录(权限被拒绝): " + path);
-                                return;
-                            }
-                            
-                            viewModel.scanMangaDirectory(path);
-                        } catch (Exception e) {
-                            Log.e(TAG, "Error processing selected folder: " + e.getMessage(), e);
-                            ToastUtil.showLong(MainActivity.this, "处理所选文件夹时出错: " + e.getMessage());
-                        }
-                    }
-                }
+                // 保留空实现，以便不出现编译错误，但不再使用
             });
 
     @Override
@@ -244,7 +191,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 Uri uri = Uri.fromParts("package", getPackageName(), null);
                 intent.setData(uri);
-                ToastUtil.showLong(this, R.string.permission_required);
+                ToastUtil.showLong(this, "需要获取存储权限以读取和保存漫画");
                 startActivity(intent);
             } else {
                 scanMangaDirectory();
@@ -263,26 +210,23 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     }
     
     private void scanMangaDirectory() {
-        String currentFolder = viewModel.getCurrentMangaFolder().getValue();
-        if (currentFolder == null || currentFolder.isEmpty()) {
-            currentFolder = DEFAULT_MANGA_FOLDER;
-        }
+        String currentFolder = DEFAULT_MANGA_FOLDER;
         
-        Log.d(TAG, "Scanning manga directory: " + currentFolder);
+        Log.d(TAG, "扫描默认漫画目录: " + currentFolder);
         
         // 检查目录是否存在，如果不存在则创建
         File directory = new File(currentFolder);
         if (!directory.exists()) {
-            Log.d(TAG, "Manga directory does not exist, creating: " + currentFolder);
+            Log.d(TAG, "默认漫画目录不存在，正在创建: " + currentFolder);
             boolean created = directory.mkdirs();
             if (created) {
-                Log.d(TAG, "Successfully created manga directory: " + currentFolder);
+                Log.d(TAG, "成功创建默认漫画目录: " + currentFolder);
                 
                 // 创建.nomedia文件防止相册扫描
                 createNoMediaFile(directory);
             } else {
-                Log.e(TAG, "Failed to create manga directory: " + currentFolder);
-                ToastUtil.showLong(this, "无法创建漫画目录，请手动创建或选择其他目录");
+                Log.e(TAG, "无法创建默认漫画目录: " + currentFolder);
+                ToastUtil.showLong(this, "无法创建默认漫画目录，请检查应用权限");
                 showEmptyView(true);
                 if (swipeRefreshLayout.isRefreshing()) {
                     swipeRefreshLayout.setRefreshing(false);
@@ -295,8 +239,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         
         if (!directory.isDirectory()) {
-            Log.e(TAG, "Path is not a directory: " + currentFolder);
-            ToastUtil.showLong(this, "所选路径不是目录，请选择有效目录");
+            Log.e(TAG, "路径不是目录: " + currentFolder);
+            ToastUtil.showLong(this, "默认漫画路径不是目录，请检查系统存储");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -305,8 +249,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
         
         if (!directory.canRead()) {
-            Log.e(TAG, "Cannot read directory (permission denied): " + currentFolder);
-            ToastUtil.showLong(this, "无法读取目录(权限被拒绝)，请确保应用有存储权限");
+            Log.e(TAG, "无法读取目录(权限被拒绝): " + currentFolder);
+            ToastUtil.showLong(this, "无法读取默认漫画目录，请确保应用有存储权限");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -317,8 +261,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // 检查目录是否为空
         File[] files = directory.listFiles();
         if (files == null || files.length == 0) {
-            Log.e(TAG, "Directory is empty: " + currentFolder);
-            ToastUtil.showLong(this, "目录为空，请选择包含漫画的目录");
+            Log.d(TAG, "目录为空: " + currentFolder);
+            ToastUtil.showLong(this, "漫画目录为空，请添加漫画后刷新");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -330,8 +274,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         try {
             viewModel.scanMangaDirectory(currentFolder);
         } catch (Exception e) {
-            Log.e(TAG, "Error scanning manga directory: " + e.getMessage(), e);
-            ToastUtil.showLong(this, "扫描目录时出错: " + e.getMessage());
+            Log.e(TAG, "扫描漫画目录时出错: " + e.getMessage(), e);
+            ToastUtil.showLong(this, "扫描漫画目录时出错: " + e.getMessage());
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -412,31 +356,10 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Log.e(TAG, "启动设置页面时出错: " + e.getMessage(), e);
                 ToastUtil.showLong(this, "打开设置页面失败: " + e.getMessage());
             }
-        } else if (id == R.id.nav_select_folder) {
-            selectMangaFolder();
         }
         
         drawerLayout.closeDrawer(GravityCompat.START);
         return true;
-    }
-    
-    private void selectMangaFolder() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            if (!Environment.isExternalStorageManager()) {
-                // 需要先获取所有文件访问权限
-                Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
-                Uri uri = Uri.fromParts("package", getPackageName(), null);
-                intent.setData(uri);
-                ToastUtil.showLong(this, R.string.permission_required);
-                startActivity(intent);
-                return;
-            }
-        }
-        
-        // 打开目录选择器
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT_TREE);
-        intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
-        folderPickerLauncher.launch(intent);
     }
     
     @Override

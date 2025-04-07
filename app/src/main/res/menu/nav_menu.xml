@@ -21,10 +21,6 @@
                 android:id="@+id/nav_settings"
                 android:icon="@drawable/ic_settings"
                 android:title="@string/settings" />
-            <item
-                android:id="@+id/nav_select_folder"
-                android:icon="@drawable/ic_folder"
-                android:title="@string/select_folder" />
         </menu>
     </item>
 </menu> 
