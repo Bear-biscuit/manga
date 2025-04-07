@@ -16,51 +16,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
-        
-    <!-- 左侧点击指示器 -->
-    <ImageView
-        android:id="@+id/leftIndicator"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@android:drawable/ic_media_previous"
-        android:background="@android:drawable/btn_default"
-        android:padding="8dp"
-        android:visibility="gone"
-        android:alpha="0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginStart="32dp" />
-        
-    <!-- 中间点击指示器 -->
-    <ImageView
-        android:id="@+id/centerIndicator"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@android:drawable/ic_menu_agenda"
-        android:background="@android:drawable/btn_default"
-        android:padding="8dp"
-        android:visibility="gone"
-        android:alpha="0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent" />
-        
-    <!-- 右侧点击指示器 -->
-    <ImageView
-        android:id="@+id/rightIndicator"
-        android:layout_width="48dp"
-        android:layout_height="48dp"
-        android:src="@android:drawable/ic_media_next"
-        android:background="@android:drawable/btn_default"
-        android:padding="8dp"
-        android:visibility="gone"
-        android:alpha="0"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintBottom_toBottomOf="parent"
-        android:layout_marginEnd="32dp" />
 
     <!-- 顶部控制栏 -->
     <LinearLayout

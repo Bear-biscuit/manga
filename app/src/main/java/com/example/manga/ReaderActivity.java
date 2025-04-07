@@ -65,10 +65,6 @@ public class ReaderActivity extends AppCompatActivity {
     private boolean processingTouch = false;
     private boolean isAnimating = false;
 
-    private View leftIndicator;
-    private View rightIndicator;
-    private View centerIndicator;
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -161,11 +157,6 @@ public class ReaderActivity extends AppCompatActivity {
         btnBack = findViewById(R.id.btnBack);
         tvChapterTitle = findViewById(R.id.tvChapterTitle);
         btnSettings = findViewById(R.id.btnSettings);
-        
-        // 初始化点击指示器
-        leftIndicator = findViewById(R.id.leftIndicator);
-        rightIndicator = findViewById(R.id.rightIndicator);
-        centerIndicator = findViewById(R.id.centerIndicator);
         
         // 设置章节标题
         tvChapterTitle.setText(chapter.getTitle());
@@ -281,7 +272,6 @@ public class ReaderActivity extends AppCompatActivity {
                         if (x < leftRegion) {
                             // 点击左侧区域，翻到上一页
                             Log.d(TAG, "Clicked on left region");
-                            showTapIndicator(leftIndicator);
                             if (currentPage > 0) {
                                 loadPage(currentPage - 1);
                             } else {
@@ -292,7 +282,6 @@ public class ReaderActivity extends AppCompatActivity {
                         } else if (x > rightRegion) {
                             // 点击右侧区域，翻到下一页
                             Log.d(TAG, "Clicked on right region");
-                            showTapIndicator(rightIndicator);
                             if (currentPage < totalPages - 1) {
                                 loadPage(currentPage + 1);
                             } else {
@@ -303,7 +292,6 @@ public class ReaderActivity extends AppCompatActivity {
                         } else {
                             // 点击中间区域，显示/隐藏控制栏
                             Log.d(TAG, "Clicked on center region");
-                            showTapIndicator(centerIndicator);
                             toggleControls();
                             return true;
                         }
@@ -314,30 +302,6 @@ public class ReaderActivity extends AppCompatActivity {
             // 传递给 PhotoView 处理缩放等
             return imageView.onTouchEvent(event);
         });
-    }
-    
-    /**
-     * 显示点击指示器
-     * @param indicator 要显示的指示器视图
-     */
-    private void showTapIndicator(View indicator) {
-        if (indicator == null) return;
-        
-        // 设置为可见
-        indicator.setVisibility(View.VISIBLE);
-        indicator.setAlpha(0.7f);
-        
-        // 设置淡出动画
-        indicator.animate()
-                .alpha(0f)
-                .setDuration(300)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        indicator.setVisibility(View.GONE);
-                    }
-                })
-                .start();
     }
     
     private void loadChapterImages() {
