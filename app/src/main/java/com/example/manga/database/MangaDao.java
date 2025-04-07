@@ -26,7 +26,7 @@ public interface MangaDao {
     @Query("SELECT * FROM manga_table WHERE path = :path")
     Manga getMangaByPath(String path);
     
-    @Query("SELECT * FROM manga_table ORDER BY lastReadTime DESC")
+    @Query("SELECT * FROM manga_table WHERE lastReadTime > 0 ORDER BY lastReadTime DESC")
     LiveData<List<Manga>> getAllMangaByLastRead();
     
     @Query("SELECT * FROM manga_table WHERE isFavorite = 1 ORDER BY title ASC")

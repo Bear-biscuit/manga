@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">漫画阅读器</string>
+    <string name="app_name">Bocchiの漫画阅读</string>
     <string name="manga_list_title">漫画书架</string>
     <string name="add_to_favorites">收藏</string>
     <string name="remove_from_favorites">取消收藏</string>
