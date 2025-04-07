@@ -310,11 +310,25 @@ public class ReaderActivity extends AppCompatActivity {
             // 设置SeekBar最大值
             seekBar.setMax(totalPages - 1);
             
-            // 读取并显示第一页
-            loadPage(0);
+            // 获取上次阅读的页码
+            int lastReadPage = chapter.getLastReadPage();
+            Log.d(TAG, "Chapter info - title: " + chapter.getTitle() 
+                    + ", lastReadPage: " + lastReadPage 
+                    + ", totalPages: " + totalPages);
+            
+            // 检查页码是否有效
+            if (lastReadPage >= 0 && lastReadPage < totalPages) {
+                // 加载上次阅读的页码
+                Log.d(TAG, "Loading last read page: " + lastReadPage);
+                loadPage(lastReadPage);
+            } else {
+                // 如果页码无效，从第一页开始
+                Log.d(TAG, "Invalid lastReadPage, starting from page 0");
+                loadPage(0);
+            }
             
             // 更新阅读进度
-            viewModel.updateReadProgress(chapter.getPath(), 0);
+            viewModel.updateReadProgress(chapter.getPath(), currentPage);
             viewModel.updateMangaLastReadTime(manga.getPath());
             
         } catch (Exception e) {
