@@ -143,4 +143,14 @@ public class MangaViewModel extends AndroidViewModel {
     public void getChapterByPath(String chapterPath, MangaRepository.Callback<Chapter> callback) {
         repository.getChapterByPath(chapterPath, callback);
     }
+    
+    // 获取上一章
+    public void getPreviousChapter(String mangaPath, int currentChapterNumber, MangaRepository.Callback<Chapter> callback) {
+        repository.getPreviousChapter(mangaPath, currentChapterNumber, callback);
+    }
+    
+    // 获取下一章
+    public void getNextChapter(String mangaPath, int currentChapterNumber, MangaRepository.Callback<Chapter> callback) {
+        repository.getNextChapter(mangaPath, currentChapterNumber, callback);
+    }
 } 

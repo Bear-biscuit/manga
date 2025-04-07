@@ -89,12 +89,15 @@
                 android:id="@+id/btnPrev"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="100dp"
+                android:layout_marginEnd="8dp"
                 android:text="@string/previous" />
 
             <Button
                 android:id="@+id/btnNext"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:minWidth="100dp"
                 android:text="@string/next" />
         </LinearLayout>
     </LinearLayout>

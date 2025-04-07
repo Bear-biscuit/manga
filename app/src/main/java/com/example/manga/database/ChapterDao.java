@@ -40,4 +40,10 @@ public interface ChapterDao {
     
     @Query("SELECT * FROM chapter_table WHERE mangaPath = :mangaPath ORDER BY lastReadTime DESC LIMIT 1")
     Chapter getLastReadChapterForManga(String mangaPath);
+    
+    @Query("SELECT * FROM chapter_table WHERE mangaPath = :mangaPath AND chapterNumber < :currentChapterNumber ORDER BY chapterNumber DESC LIMIT 1")
+    Chapter getPreviousChapter(String mangaPath, int currentChapterNumber);
+    
+    @Query("SELECT * FROM chapter_table WHERE mangaPath = :mangaPath AND chapterNumber > :currentChapterNumber ORDER BY chapterNumber ASC LIMIT 1")
+    Chapter getNextChapter(String mangaPath, int currentChapterNumber);
 } 

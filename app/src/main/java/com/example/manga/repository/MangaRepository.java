@@ -253,6 +253,30 @@ public class MangaRepository {
         });
     }
     
+    public void getPreviousChapter(String mangaPath, int currentChapterNumber, final Callback<Chapter> callback) {
+        executorService.execute(() -> {
+            Chapter chapter = chapterDao.getPreviousChapter(mangaPath, currentChapterNumber);
+            android.util.Log.d("MangaRepository", "Getting previous chapter for manga: " + mangaPath 
+                    + ", current chapter: " + currentChapterNumber
+                    + ", result: " + (chapter != null ? "found - " + chapter.getTitle() : "not found"));
+            if (callback != null) {
+                callback.onComplete(chapter);
+            }
+        });
+    }
+    
+    public void getNextChapter(String mangaPath, int currentChapterNumber, final Callback<Chapter> callback) {
+        executorService.execute(() -> {
+            Chapter chapter = chapterDao.getNextChapter(mangaPath, currentChapterNumber);
+            android.util.Log.d("MangaRepository", "Getting next chapter for manga: " + mangaPath 
+                    + ", current chapter: " + currentChapterNumber
+                    + ", result: " + (chapter != null ? "found - " + chapter.getTitle() : "not found"));
+            if (callback != null) {
+                callback.onComplete(chapter);
+            }
+        });
+    }
+    
     // 回调接口
     public interface Callback<T> {
         void onComplete(T result);

@@ -178,19 +178,13 @@ public class ReaderActivity extends AppCompatActivity {
             startActivityForResult(intent, 1);
         });
         
-        // 设置上一页按钮
-        btnPrev.setOnClickListener(v -> {
-            if (currentPage > 0) {
-                loadPage(currentPage - 1);
-            }
-        });
+        // 修改上一页按钮为上一章按钮
+        btnPrev.setText("上一章");
+        btnPrev.setOnClickListener(v -> loadPreviousChapter());
         
-        // 设置下一页按钮
-        btnNext.setOnClickListener(v -> {
-            if (currentPage < totalPages - 1) {
-                loadPage(currentPage + 1);
-            }
-        });
+        // 修改下一页按钮为下一章按钮
+        btnNext.setText("下一章");
+        btnNext.setOnClickListener(v -> loadNextChapter());
         
         // 设置进度条监听
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -312,6 +306,9 @@ public class ReaderActivity extends AppCompatActivity {
             
             // 设置总页数
             totalPages = imageFilePaths.size();
+            
+            // 更新章节对象中的总页数
+            chapter.setTotalPages(totalPages);
             
             // 设置SeekBar最大值
             seekBar.setMax(totalPages - 1);
@@ -582,6 +579,64 @@ public class ReaderActivity extends AppCompatActivity {
             // 设置页面返回后，重新应用主题和布局
             applyTheme();
             recreate();
+        }
+    }
+
+    // 加载上一章
+    private void loadPreviousChapter() {
+        if (manga != null && chapter != null) {
+            viewModel.getPreviousChapter(manga.getPath(), chapter.getChapterNumber(), previousChapter -> {
+                if (previousChapter != null) {
+                    // 保存当前章节的阅读进度
+                    viewModel.updateReadProgress(chapter.getPath(), currentPage);
+                    
+                    // 切换到上一章
+                    runOnUiThread(() -> {
+                        Toast.makeText(ReaderActivity.this, 
+                                "正在加载上一章: " + previousChapter.getTitle(), 
+                                Toast.LENGTH_SHORT).show();
+                        
+                        // 更新当前章节并重新加载
+                        chapter = previousChapter;
+                        tvChapterTitle.setText(chapter.getTitle());
+                        loadChapterImages();
+                    });
+                } else {
+                    runOnUiThread(() -> 
+                            Toast.makeText(ReaderActivity.this, 
+                                    "已经是第一章", 
+                                    Toast.LENGTH_SHORT).show());
+                }
+            });
+        }
+    }
+    
+    // 加载下一章
+    private void loadNextChapter() {
+        if (manga != null && chapter != null) {
+            viewModel.getNextChapter(manga.getPath(), chapter.getChapterNumber(), nextChapter -> {
+                if (nextChapter != null) {
+                    // 保存当前章节的阅读进度
+                    viewModel.updateReadProgress(chapter.getPath(), currentPage);
+                    
+                    // 切换到下一章
+                    runOnUiThread(() -> {
+                        Toast.makeText(ReaderActivity.this, 
+                                "正在加载下一章: " + nextChapter.getTitle(), 
+                                Toast.LENGTH_SHORT).show();
+                        
+                        // 更新当前章节并重新加载
+                        chapter = nextChapter;
+                        tvChapterTitle.setText(chapter.getTitle());
+                        loadChapterImages();
+                    });
+                } else {
+                    runOnUiThread(() -> 
+                            Toast.makeText(ReaderActivity.this, 
+                                    "已经是最后一章", 
+                                    Toast.LENGTH_SHORT).show());
+                }
+            });
         }
     }
 } 
