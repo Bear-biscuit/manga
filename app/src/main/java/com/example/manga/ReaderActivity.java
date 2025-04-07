@@ -1,5 +1,7 @@
 package com.example.manga;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Bitmap;
@@ -7,8 +9,12 @@ import android.graphics.BitmapFactory;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.KeyEvent;
+import android.view.MotionEvent;
 import android.view.View;
+import android.view.animation.AccelerateInterpolator;
+import android.view.animation.DecelerateInterpolator;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.SeekBar;
@@ -16,6 +22,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.core.view.GestureDetectorCompat;
 import androidx.lifecycle.ViewModelProvider;
 
 import com.example.manga.R;
@@ -27,6 +34,7 @@ import com.github.chrisbanes.photoview.PhotoView;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class ReaderActivity extends AppCompatActivity {
@@ -50,10 +58,11 @@ public class ReaderActivity extends AppCompatActivity {
     private List<String> imageFilePaths = new ArrayList<>();
     private MangaViewModel viewModel;
     
-    // 添加滑动手势检测相关变量
+    // 翻页相关变量
     private float startX;
+    private float startY;
     private static final float SWIPE_THRESHOLD = 100;
-    private static final float SWIPE_VELOCITY_THRESHOLD = 100;
+    private boolean processingTouch = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -151,11 +160,8 @@ public class ReaderActivity extends AppCompatActivity {
         // 设置章节标题
         tvChapterTitle.setText(chapter.getTitle());
 
-        // 设置点击事件
-        imageView.setOnClickListener(v -> toggleControls());
-        
-        // 添加滑动手势检测
-        setupSwipeGestures();
+        // 设置基本触摸和点击事件
+        setupTouchEvents();
         
         // 设置返回按钮
         btnBack.setOnClickListener(v -> finish());
@@ -215,6 +221,58 @@ public class ReaderActivity extends AppCompatActivity {
         }
     }
     
+    /**
+     * 设置触摸和点击事件
+     */
+    private void setupTouchEvents() {
+        // 这是一个关键的修改，分离触摸事件和点击事件
+        imageView.setOnTouchListener((v, event) -> {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    startX = event.getX();
+                    startY = event.getY();
+                    processingTouch = false;
+                    break;
+                    
+                case MotionEvent.ACTION_MOVE:
+                    float moveX = event.getX();
+                    float moveY = event.getY();
+                    float deltaX = moveX - startX;
+                    float deltaY = moveY - startY;
+                    
+                    // 如果水平移动距离大于垂直移动距离且超过阈值，处理为滑动翻页
+                    if (!processingTouch && Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > SWIPE_THRESHOLD) {
+                        processingTouch = true;
+                        if (deltaX > 0) {
+                            // 向右滑动，上一页
+                            if (currentPage > 0) {
+                                loadPage(currentPage - 1);
+                                return true;
+                            }
+                        } else {
+                            // 向左滑动，下一页
+                            if (currentPage < totalPages - 1) {
+                                loadPage(currentPage + 1);
+                                return true;
+                            }
+                        }
+                    }
+                    break;
+                    
+                case MotionEvent.ACTION_UP:
+                    // 如果未被识别为滑动且移动距离小，则视为点击
+                    if (!processingTouch && Math.abs(event.getX() - startX) < 50 && Math.abs(event.getY() - startY) < 50) {
+                        toggleControls();
+                        return true;
+                    }
+                    break;
+            }
+            
+            // 传递给 PhotoView 处理缩放等
+            return imageView.onTouchEvent(event);
+        });
+    }
+    
     private void loadChapterImages() {
         try {
             // 获取章节文件夹路径
@@ -236,6 +294,9 @@ public class ReaderActivity extends AppCompatActivity {
                 finish();
                 return;
             }
+            
+            // 排序文件
+            Arrays.sort(files, (f1, f2) -> f1.getName().compareTo(f2.getName()));
             
             // 清空列表并添加所有图片
             imageFilePaths.clear();
@@ -264,7 +325,8 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void toggleControls() {
-        if (topControlsLayout.getVisibility() == View.VISIBLE &&
+        Log.d(TAG, "toggleControls called");
+        if (topControlsLayout.getVisibility() == View.VISIBLE ||
             bottomControlsLayout.getVisibility() == View.VISIBLE) {
             hideControls();
         } else {
@@ -273,6 +335,8 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void showControls() {
+        Log.d(TAG, "showControls called");
+        // 简化控制栏显示逻辑
         topControlsLayout.setVisibility(View.VISIBLE);
         bottomControlsLayout.setVisibility(View.VISIBLE);
         
@@ -286,6 +350,8 @@ public class ReaderActivity extends AppCompatActivity {
     }
 
     private void hideControls() {
+        Log.d(TAG, "hideControls called");
+        // 简化控制栏隐藏逻辑
         topControlsLayout.setVisibility(View.GONE);
         bottomControlsLayout.setVisibility(View.GONE);
     }
@@ -338,44 +404,13 @@ public class ReaderActivity extends AppCompatActivity {
             // 更新 SeekBar 位置
             seekBar.setProgress(currentPage);
             
+            // 更新阅读进度
+            viewModel.updateReadProgress(chapter.getPath(), pageIndex);
+            
         } catch (Exception e) {
             Log.e(TAG, "Error loading image: " + e.getMessage(), e);
             Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-    }
-
-    // 添加滑动手势检测方法
-    private void setupSwipeGestures() {
-        imageView.setOnTouchListener((v, event) -> {
-            switch (event.getAction()) {
-                case android.view.MotionEvent.ACTION_DOWN:
-                    startX = event.getX();
-                    return false;  // 返回 false 以允许 PhotoView 处理其他手势
-                
-                case android.view.MotionEvent.ACTION_UP:
-                    float endX = event.getX();
-                    float diffX = startX - endX;
-                    
-                    // 如果水平移动距离足够大，则视为翻页
-                    if (Math.abs(diffX) > SWIPE_THRESHOLD) {
-                        if (diffX > 0) {
-                            // 向左滑动，显示下一页
-                            if (currentPage < totalPages - 1) {
-                                loadPage(currentPage + 1);
-                                return true;
-                            }
-                        } else {
-                            // 向右滑动，显示上一页
-                            if (currentPage > 0) {
-                                loadPage(currentPage - 1);
-                                return true;
-                            }
-                        }
-                    }
-                    return false;
-            }
-            return false;
-        });
     }
 
     @Override
