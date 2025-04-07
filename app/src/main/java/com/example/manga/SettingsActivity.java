@@ -6,10 +6,11 @@ import android.util.Log;
 import android.widget.CheckBox;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+
+import com.example.manga.util.ToastUtil;
 
 public class SettingsActivity extends AppCompatActivity {
     private static final String TAG = "SettingsActivity";
@@ -61,8 +62,8 @@ public class SettingsActivity extends AppCompatActivity {
             Log.d(TAG, "onCreate 完成");
             
         } catch (Exception e) {
-            Log.e(TAG, "onCreate 过程中出错: " + e.getMessage(), e);
-            Toast.makeText(this, "初始化设置页面失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e(TAG, "onCreate error: " + e.getMessage(), e);
+            ToastUtil.showLong(this, "初始化设置页面失败: " + e.getMessage());
         }
     }
     
@@ -78,8 +79,8 @@ public class SettingsActivity extends AppCompatActivity {
             if (autoHideCheckBox == null) Log.e(TAG, "自动隐藏控件未找到");
             if (volumeNavCheckBox == null) Log.e(TAG, "音量键导航控件未找到");
         } catch (Exception e) {
-            Log.e(TAG, "初始化视图出错: " + e.getMessage(), e);
-            Toast.makeText(this, "初始化视图失败", Toast.LENGTH_SHORT).show();
+            Log.e(TAG, "initView error: " + e.getMessage(), e);
+            ToastUtil.showShort(this, "初始化视图失败");
         }
     }
     
@@ -157,7 +158,7 @@ public class SettingsActivity extends AppCompatActivity {
                         // 应用设置
                         AppCompatDelegate.setDefaultNightMode(theme);
                         
-                        Toast.makeText(this, "主题模式已更改", Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(this, "主题模式已更改");
                     } catch (Exception e) {
                         Log.e(TAG, "应用主题模式出错: " + e.getMessage(), e);
                     }
@@ -186,7 +187,7 @@ public class SettingsActivity extends AppCompatActivity {
                         // 重新创建活动以应用新主题
                         recreate();
                         
-                        Toast.makeText(this, "颜色主题已更改", Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(this, "颜色主题已更改");
                     } catch (Exception e) {
                         Log.e(TAG, "应用颜色主题出错: " + e.getMessage(), e);
                     }
@@ -198,7 +199,7 @@ public class SettingsActivity extends AppCompatActivity {
                 autoHideCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     try {
                         preferences.edit().putBoolean(KEY_AUTO_HIDE, isChecked).apply();
-                        Toast.makeText(this, isChecked ? "已开启自动隐藏控制栏" : "已关闭自动隐藏控制栏", Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(this, isChecked ? "已开启自动隐藏控制栏" : "已关闭自动隐藏控制栏");
                     } catch (Exception e) {
                         Log.e(TAG, "保存自动隐藏设置出错: " + e.getMessage(), e);
                     }
@@ -210,7 +211,7 @@ public class SettingsActivity extends AppCompatActivity {
                 volumeNavCheckBox.setOnCheckedChangeListener((buttonView, isChecked) -> {
                     try {
                         preferences.edit().putBoolean(KEY_VOLUME_NAV, isChecked).apply();
-                        Toast.makeText(this, isChecked ? "已开启音量键翻页" : "已关闭音量键翻页", Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(this, isChecked ? "已开启音量键翻页" : "已关闭音量键翻页");
                     } catch (Exception e) {
                         Log.e(TAG, "保存音量键翻页设置出错: " + e.getMessage(), e);
                     }

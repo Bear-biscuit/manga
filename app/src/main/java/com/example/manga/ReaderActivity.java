@@ -31,6 +31,7 @@ import com.example.manga.model.Chapter;
 import com.example.manga.model.Manga;
 import com.example.manga.viewmodel.MangaViewModel;
 import com.github.chrisbanes.photoview.PhotoView;
+import com.example.manga.util.ToastUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -82,7 +83,7 @@ public class ReaderActivity extends AppCompatActivity {
         chapter = getIntent().getParcelableExtra("chapter");
         
         if (manga == null || chapter == null) {
-            Toast.makeText(this, "加载漫画失败：缺少必要参数", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "加载漫画失败：缺少必要参数");
             finish();
             return;
         }
@@ -309,7 +310,7 @@ public class ReaderActivity extends AppCompatActivity {
             // 获取章节文件夹路径
             File chapterDir = new File(chapter.getPath());
             if (!chapterDir.exists() || !chapterDir.isDirectory()) {
-                Toast.makeText(this, "章节目录不存在", Toast.LENGTH_SHORT).show();
+                ToastUtil.showShort(this, "章节目录不存在");
                 finish();
                 return;
             }
@@ -321,7 +322,7 @@ public class ReaderActivity extends AppCompatActivity {
                     name.toLowerCase().endsWith(".png"));
             
             if (files == null || files.length == 0) {
-                Toast.makeText(this, "章节内未找到图片", Toast.LENGTH_SHORT).show();
+                ToastUtil.showShort(this, "章节内未找到图片");
                 finish();
                 return;
             }
@@ -367,7 +368,7 @@ public class ReaderActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "Error loading chapter images: " + e.getMessage(), e);
-            Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "加载图片时出错: " + e.getMessage());
             finish();
         }
     }
@@ -453,7 +454,7 @@ public class ReaderActivity extends AppCompatActivity {
                 Bitmap bitmap = BitmapFactory.decodeFile(imageFile.getAbsolutePath());
                 imageView.setImageBitmap(bitmap);
             } else {
-                Toast.makeText(this, "无法加载图片：文件不存在", Toast.LENGTH_SHORT).show();
+                ToastUtil.showShort(this, "无法加载图片：文件不存在");
             }
             
             // 更新页面信息
@@ -470,7 +471,7 @@ public class ReaderActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "Error loading image: " + e.getMessage(), e);
-            Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "加载图片时出错: " + e.getMessage());
         }
     }
     
@@ -515,7 +516,7 @@ public class ReaderActivity extends AppCompatActivity {
         try {
             File imageFile = new File(imageFilePaths.get(newPageIndex));
             if (!imageFile.exists()) {
-                Toast.makeText(this, "无法加载图片：文件不存在", Toast.LENGTH_SHORT).show();
+                ToastUtil.showShort(this, "无法加载图片：文件不存在");
                 isAnimating = false;
                 return;
             }
@@ -597,7 +598,7 @@ public class ReaderActivity extends AppCompatActivity {
             
         } catch (Exception e) {
             Log.e(TAG, "Error during page animation: " + e.getMessage(), e);
-            Toast.makeText(this, "加载图片时出错: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(this, "加载图片时出错: " + e.getMessage());
             isAnimating = false;
             updatePage(newPageIndex);
         }
@@ -623,9 +624,8 @@ public class ReaderActivity extends AppCompatActivity {
                     
                     // 切换到上一章
                     runOnUiThread(() -> {
-                        Toast.makeText(ReaderActivity.this, 
-                                "正在加载上一章: " + previousChapter.getTitle(), 
-                                Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(ReaderActivity.this, 
+                                "正在加载上一章: " + previousChapter.getTitle());
                         
                         // 更新当前章节并重新加载
                         chapter = previousChapter;
@@ -634,9 +634,7 @@ public class ReaderActivity extends AppCompatActivity {
                     });
                 } else {
                     runOnUiThread(() -> 
-                            Toast.makeText(ReaderActivity.this, 
-                                    "已经是第一章", 
-                                    Toast.LENGTH_SHORT).show());
+                            ToastUtil.showShort(ReaderActivity.this, "已经是第一章"));
                 }
             });
         }
@@ -652,9 +650,8 @@ public class ReaderActivity extends AppCompatActivity {
                     
                     // 切换到下一章
                     runOnUiThread(() -> {
-                        Toast.makeText(ReaderActivity.this, 
-                                "正在加载下一章: " + nextChapter.getTitle(), 
-                                Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(ReaderActivity.this, 
+                                "正在加载下一章: " + nextChapter.getTitle());
                         
                         // 更新当前章节并重新加载
                         chapter = nextChapter;
@@ -663,9 +660,7 @@ public class ReaderActivity extends AppCompatActivity {
                     });
                 } else {
                     runOnUiThread(() -> 
-                            Toast.makeText(ReaderActivity.this, 
-                                    "已经是最后一章", 
-                                    Toast.LENGTH_SHORT).show());
+                            ToastUtil.showShort(ReaderActivity.this, "已经是最后一章"));
                 }
             });
         }

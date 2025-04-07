@@ -18,6 +18,7 @@ import androidx.viewpager2.widget.ViewPager2;
 import com.example.manga.adapter.MangaPageAdapter;
 import com.example.manga.model.Chapter;
 import com.example.manga.viewmodel.MangaViewModel;
+import com.example.manga.util.ToastUtil;
 
 import java.util.List;
 
@@ -81,7 +82,7 @@ public class MangaReaderActivity extends AppCompatActivity {
                     + ", manga path: " + mangaPath);
             
             if (chapterPath == null) {
-                Toast.makeText(this, R.string.error_loading_manga, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, getString(R.string.error_loading_manga));
                 finish();
                 return;
             }
@@ -149,8 +150,9 @@ public class MangaReaderActivity extends AppCompatActivity {
             loadChapter();
             
         } catch (Exception e) {
-            Log.e(TAG, "onCreate error: " + e.getMessage(), e);
-            Toast.makeText(this, "阅读器初始化失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            Log.e(TAG, "Error initializing reader: " + e.getMessage(), e);
+            ToastUtil.showLong(this, "阅读器初始化失败: " + e.getMessage());
+            finish();
         }
     }
     
@@ -182,7 +184,7 @@ public class MangaReaderActivity extends AppCompatActivity {
                 // 从数据库获取章节信息，包括上次阅读位置
                 queryChapterFromDatabase();
             } else {
-                Toast.makeText(this, R.string.error_loading_manga, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, getString(R.string.error_loading_manga));
                 finish();
             }
         });

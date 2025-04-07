@@ -11,6 +11,7 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.annotation.StringRes;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.lifecycle.ViewModelProvider;
@@ -25,6 +26,8 @@ import com.example.manga.viewmodel.MangaViewModel;
 import com.google.android.material.tabs.TabLayout;
 
 import java.io.File;
+
+import com.example.manga.util.ToastUtil;
 
 public class MangaDetailActivity extends AppCompatActivity implements ChapterAdapter.OnChapterClickListener {
 
@@ -86,7 +89,7 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
             // 获取漫画路径
             mangaPath = getIntent().getStringExtra(EXTRA_MANGA_PATH);
             if (mangaPath == null) {
-                Toast.makeText(this, R.string.error_loading_manga, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, getString(R.string.error_loading_manga));
                 finish();
                 return;
             }
@@ -105,7 +108,7 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
                     updateFavoriteButton();
                     
                     int messageId = isFavorite ? R.string.added_to_favorites : R.string.removed_from_favorites;
-                    Toast.makeText(this, messageId, Toast.LENGTH_SHORT).show();
+                    ToastUtil.showShort(this, messageId);
                 }
             });
             
@@ -150,7 +153,8 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
             
         } catch (Exception e) {
             Log.e(TAG, "onCreate error: " + e.getMessage(), e);
-            Toast.makeText(this, "详情页面初始化失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "详情页面初始化失败: " + e.getMessage());
+            finish();
         }
     }
     
@@ -243,7 +247,7 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
         if (isValidChapter(chapter)) {
             startReaderActivity(chapter);
         } else {
-            Toast.makeText(this, "章节无效或不包含图片: " + chapter.getTitle(), Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "章节无效或不包含图片: " + chapter.getTitle());
         }
     }
     
@@ -276,15 +280,15 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
                     
                     if (!foundValidChapter) {
                         Log.e(TAG, "No valid chapters found for manga: " + mangaPath);
-                        Toast.makeText(this, "没有找到有效章节", Toast.LENGTH_SHORT).show();
+                        ToastUtil.showShort(this, "没有找到有效章节");
                     }
                 } else {
                     Log.e(TAG, "No chapters found for manga: " + mangaPath);
-                    Toast.makeText(this, "没有找到章节", Toast.LENGTH_SHORT).show();
+                    ToastUtil.showShort(this, "没有找到章节");
                 }
             } catch (Exception e) {
                 Log.e(TAG, "Error opening first chapter: " + e.getMessage(), e);
-                Toast.makeText(this, "打开章节失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, "打开章节失败: " + e.getMessage());
             }
         });
     }
@@ -332,5 +336,9 @@ public class MangaDetailActivity extends AppCompatActivity implements ChapterAda
                 }
             });
         });
+    }
+
+    private void showMessage(@StringRes int messageId) {
+        ToastUtil.showShort(MangaDetailActivity.this, getString(messageId));
     }
 } 

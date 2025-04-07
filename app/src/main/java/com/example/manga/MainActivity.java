@@ -35,6 +35,7 @@ import com.example.manga.adapter.MangaGridAdapter;
 import com.example.manga.model.Manga;
 import com.example.manga.viewmodel.MangaViewModel;
 import com.google.android.material.navigation.NavigationView;
+import com.example.manga.util.ToastUtil;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -90,24 +91,24 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                             // 检查路径是否存在且可读
                             File directory = new File(path);
                             if (!directory.exists()) {
-                                Toast.makeText(MainActivity.this, "目录不存在: " + path, Toast.LENGTH_LONG).show();
+                                ToastUtil.showLong(MainActivity.this, "目录不存在: " + path);
                                 return;
                             }
                             
                             if (!directory.isDirectory()) {
-                                Toast.makeText(MainActivity.this, "所选路径不是目录: " + path, Toast.LENGTH_LONG).show();
+                                ToastUtil.showLong(MainActivity.this, "所选路径不是目录: " + path);
                                 return;
                             }
                             
                             if (!directory.canRead()) {
-                                Toast.makeText(MainActivity.this, "无法读取目录(权限被拒绝): " + path, Toast.LENGTH_LONG).show();
+                                ToastUtil.showLong(MainActivity.this, "无法读取目录(权限被拒绝): " + path);
                                 return;
                             }
                             
                             viewModel.scanMangaDirectory(path);
                         } catch (Exception e) {
                             Log.e(TAG, "Error processing selected folder: " + e.getMessage(), e);
-                            Toast.makeText(MainActivity.this, "处理所选文件夹时出错: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                            ToastUtil.showLong(MainActivity.this, "处理所选文件夹时出错: " + e.getMessage());
                         }
                     }
                 }
@@ -177,7 +178,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // 观察错误消息
             viewModel.getErrorMessage().observe(this, errorMessage -> {
                 if (errorMessage != null && !errorMessage.isEmpty()) {
-                    Toast.makeText(this, errorMessage, Toast.LENGTH_LONG).show();
+                    ToastUtil.showLong(this, errorMessage);
                 }
             });
             
@@ -186,7 +187,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             
         } catch (Exception e) {
             Log.e(TAG, "onCreate error: " + e.getMessage(), e);
-            Toast.makeText(this, "初始化失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "初始化失败: " + e.getMessage());
         }
     }
     
@@ -242,7 +243,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 Uri uri = Uri.fromParts("package", getPackageName(), null);
                 intent.setData(uri);
-                Toast.makeText(this, R.string.permission_required, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, R.string.permission_required);
                 startActivity(intent);
             } else {
                 scanMangaDirectory();
@@ -272,7 +273,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         File directory = new File(currentFolder);
         if (!directory.exists()) {
             Log.e(TAG, "Manga directory does not exist: " + currentFolder);
-            Toast.makeText(this, "漫画目录不存在，请选择有效目录", Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "漫画目录不存在，请选择有效目录");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -281,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             // 提示用户需要选择有效目录
             new android.os.Handler().postDelayed(() -> {
                 // 提示用户选择新目录
-                Toast.makeText(this, "请选择包含漫画的目录", Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, "请选择包含漫画的目录");
                 selectMangaFolder();
             }, 1000);
             return;
@@ -289,7 +290,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         if (!directory.isDirectory()) {
             Log.e(TAG, "Path is not a directory: " + currentFolder);
-            Toast.makeText(this, "所选路径不是目录，请选择有效目录", Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "所选路径不是目录，请选择有效目录");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -299,7 +300,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         
         if (!directory.canRead()) {
             Log.e(TAG, "Cannot read directory (permission denied): " + currentFolder);
-            Toast.makeText(this, "无法读取目录(权限被拒绝)，请确保应用有存储权限", Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "无法读取目录(权限被拒绝)，请确保应用有存储权限");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -311,7 +312,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         File[] files = directory.listFiles();
         if (files == null || files.length == 0) {
             Log.e(TAG, "Directory is empty: " + currentFolder);
-            Toast.makeText(this, "目录为空，请选择包含漫画的目录", Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "目录为空，请选择包含漫画的目录");
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -324,7 +325,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             viewModel.scanMangaDirectory(currentFolder);
         } catch (Exception e) {
             Log.e(TAG, "Error scanning manga directory: " + e.getMessage(), e);
-            Toast.makeText(this, "扫描目录时出错: " + e.getMessage(), Toast.LENGTH_LONG).show();
+            ToastUtil.showLong(this, "扫描目录时出错: " + e.getMessage());
             showEmptyView(true);
             if (swipeRefreshLayout.isRefreshing()) {
                 swipeRefreshLayout.setRefreshing(false);
@@ -339,7 +340,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                 scanMangaDirectory();
             } else {
-                Toast.makeText(this, R.string.permission_denied, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, getString(R.string.permission_denied));
             }
         }
     }
@@ -383,7 +384,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Log.d(TAG, "设置页面启动命令已发送");
             } catch (Exception e) {
                 Log.e(TAG, "启动设置页面时出错: " + e.getMessage(), e);
-                Toast.makeText(this, "打开设置页面失败: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, "打开设置页面失败: " + e.getMessage());
             }
         } else if (id == R.id.nav_select_folder) {
             selectMangaFolder();
@@ -400,7 +401,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 Intent intent = new Intent(Settings.ACTION_MANAGE_APP_ALL_FILES_ACCESS_PERMISSION);
                 Uri uri = Uri.fromParts("package", getPackageName(), null);
                 intent.setData(uri);
-                Toast.makeText(this, R.string.permission_required, Toast.LENGTH_LONG).show();
+                ToastUtil.showLong(this, R.string.permission_required);
                 startActivity(intent);
                 return;
             }
@@ -439,7 +440,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         // 设置刷新监听器
         swipeRefreshLayout.setOnRefreshListener(() -> {
             Log.d(TAG, "下拉刷新触发，重新扫描漫画目录");
-            Toast.makeText(MainActivity.this, "正在刷新漫画目录...", Toast.LENGTH_SHORT).show();
+            ToastUtil.showShort(MainActivity.this, "正在刷新漫画目录...");
             scanMangaDirectory();
         });
     }
