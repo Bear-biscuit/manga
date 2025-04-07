@@ -65,6 +65,10 @@ public class ReaderActivity extends AppCompatActivity {
     private boolean processingTouch = false;
     private boolean isAnimating = false;
 
+    private View leftIndicator;
+    private View rightIndicator;
+    private View centerIndicator;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -158,6 +162,11 @@ public class ReaderActivity extends AppCompatActivity {
         tvChapterTitle = findViewById(R.id.tvChapterTitle);
         btnSettings = findViewById(R.id.btnSettings);
         
+        // 初始化点击指示器
+        leftIndicator = findViewById(R.id.leftIndicator);
+        rightIndicator = findViewById(R.id.rightIndicator);
+        centerIndicator = findViewById(R.id.centerIndicator);
+        
         // 设置章节标题
         tvChapterTitle.setText(chapter.getTitle());
 
@@ -220,12 +229,16 @@ public class ReaderActivity extends AppCompatActivity {
      * 设置触摸和点击事件
      */
     private void setupTouchEvents() {
-        // 这是一个关键的修改，分离触摸事件和点击事件
+        // 分离触摸事件和点击事件
         imageView.setOnTouchListener((v, event) -> {
             // 如果正在进行动画，忽略所有触摸事件
             if (isAnimating) {
                 return true;
             }
+            
+            int screenWidth = getResources().getDisplayMetrics().widthPixels;
+            int leftRegion = screenWidth / 4;              // 左侧25%区域
+            int rightRegion = screenWidth * 3 / 4;         // 右侧25%区域开始位置
             
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
@@ -262,8 +275,38 @@ public class ReaderActivity extends AppCompatActivity {
                 case MotionEvent.ACTION_UP:
                     // 如果未被识别为滑动且移动距离小，则视为点击
                     if (!processingTouch && Math.abs(event.getX() - startX) < 50 && Math.abs(event.getY() - startY) < 50) {
-                        toggleControls();
-                        return true;
+                        // 获取点击的X坐标，确定是左侧、中间还是右侧
+                        float x = event.getX();
+                        
+                        if (x < leftRegion) {
+                            // 点击左侧区域，翻到上一页
+                            Log.d(TAG, "Clicked on left region");
+                            showTapIndicator(leftIndicator);
+                            if (currentPage > 0) {
+                                loadPage(currentPage - 1);
+                            } else {
+                                // 已经是第一页，尝试加载上一章
+                                loadPreviousChapter();
+                            }
+                            return true;
+                        } else if (x > rightRegion) {
+                            // 点击右侧区域，翻到下一页
+                            Log.d(TAG, "Clicked on right region");
+                            showTapIndicator(rightIndicator);
+                            if (currentPage < totalPages - 1) {
+                                loadPage(currentPage + 1);
+                            } else {
+                                // 已经是最后一页，尝试加载下一章
+                                loadNextChapter();
+                            }
+                            return true;
+                        } else {
+                            // 点击中间区域，显示/隐藏控制栏
+                            Log.d(TAG, "Clicked on center region");
+                            showTapIndicator(centerIndicator);
+                            toggleControls();
+                            return true;
+                        }
                     }
                     break;
             }
@@ -271,6 +314,30 @@ public class ReaderActivity extends AppCompatActivity {
             // 传递给 PhotoView 处理缩放等
             return imageView.onTouchEvent(event);
         });
+    }
+    
+    /**
+     * 显示点击指示器
+     * @param indicator 要显示的指示器视图
+     */
+    private void showTapIndicator(View indicator) {
+        if (indicator == null) return;
+        
+        // 设置为可见
+        indicator.setVisibility(View.VISIBLE);
+        indicator.setAlpha(0.7f);
+        
+        // 设置淡出动画
+        indicator.animate()
+                .alpha(0f)
+                .setDuration(300)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        indicator.setVisibility(View.GONE);
+                    }
+                })
+                .start();
     }
     
     private void loadChapterImages() {
